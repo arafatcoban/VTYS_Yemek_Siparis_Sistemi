@@ -161,3 +161,74 @@ create table Siparis_Detaylari
 	constraint FK_SiparisDetayi_Siparis foreign key(SiparisID) references Siparisler(SiparisID),
 	constraint FK_SiparisDetayi_Urun foreign key(UrunID) references Menu_Urunler(UrunID)
 )
+
+
+insert into Kuryeler (Ad, Soyad, TelefonNo, Durum)
+values ('Ahmet', 'Yılmaz', '05551112233', 1);
+-- Durum 1: Müsait demek
+-- kuryerler tablosunda IsActive kolonunu gereksiz olarak tanımlamışım şimdi onu sileceğim
+
+-- alter table Kuryeler drop column IsActive; -- önce bunu denedim ama default değeri olduğu için direkt silinemiyormuş
+
+alter table Kuryeler drop constraint DF_Kuryeler_IsActive; -- bu kod kısmını yapay zeka dan aldım. bunun sayesinde şuanda default değeri yok ilgili kolonun 
+
+alter table Kuryeler drop column IsActive;
+
+insert into Siparisler(MusteriID,RestoranID,KuryeID, ToplamTutar,IsAskidaSiparis,BagisTutari)
+values(1,1,1, 250.00, 0, 20.00); -- askıda sipariş olmadığı için IsAskidaSiparis 0 olmalıdır. normal bir sipariş çünkü
+
+alter table Siparisler -- siparisdurumu adlı kolonun uzunluğunu değiştirdim siparişin durumunu belirtmek için. 
+alter column SİparisDurumu nvarchar(50); 
+
+insert into Siparis_Detaylari(SiparisID, UrunID, Adet,BirimFiyat)
+values (4,1,2,125.00) -- urun id si 1 olan adana kebaptı ve kebaptan 2 adet ekledim biirm fiyatı da 125 tl. 
+
+update Siparis_Detaylari set BirimFiyat = 230 where  BirimFiyat = 115;
+update Siparisler set ToplamTutar = 480 where ToplamTutar = 250
+
+select *from Restoranlar
+
+select *from Adresler
+
+select *from Musteri
+
+select *from Menu_Urunler
+
+select *from Siparisler
+
+select *from Siparis_Detaylari
+
+select *from Kuryeler -- KONTROL AMAÇLI TÜM TABLOLARI ÇEKTİM BURADA.
+
+-- TRİGGER YAZMA KISMI...
+
+create trigger  TRG_BagisEkle -- yazacağım trigger a bir isim veriyorum
+on Siparisler -- hangi tabloyu takip edeceğimizi belirliyoruz. yani burada siparişler tablosunu takip edeceğiz.
+after insert -- ne zaman çalışacağını belirliyorum. mesela burada siparis tablosuna yeni siparis eklendiğinde buranın çalışacağını belirliyorum.
+as
+begin
+	declare @GelenBagis decimal(18,2);
+	select @GelenBagis = BagisTutari from inserted;-- yeni eklenen siparişteki bağış miktarını alıp bu değişkene atıyoruz
+
+	if @GelenBagis > 0
+	begin
+		update Askida_Yemek_Kumbara
+		set MevcutBakiye = MevcutBakiye + @GelenBagis
+		where KumbaraID=1;
+	end
+end;
+
+
+insert into Kuryeler (Ad, Soyad, TelefonNo, Durum)
+values ('Ali', 'Veli', '05369852101', 1);
+
+insert into Kuryeler(Ad,Soyad,TelefonNo,Durum)
+values('Yasin', 'Durak', '02563546978', 1);
+
+select *from Askida_Yemek_Kumbara
+
+insert into Siparisler(MusteriID,RestoranID,KuryeID, ToplamTutar,IsAskidaSiparis,BagisTutari)
+values(2, 2, 2, 250.00, 0, 70.00);
+
+insert into Siparis_Detaylari(SiparisID,UrunID,Adet,BirimFiyat)
+values(5,2,1,180);
